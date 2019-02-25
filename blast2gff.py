@@ -8,7 +8,7 @@ parser.add_argument("-o", "--output", help="gff3 file name output", required=Tru
 args = parser.parse_args()
 
 #read blast output
-df = pd.read_csv(args.input,sep="\t", header=None)
+df = pd.read_csv(args.input,sep="\t", header=None, skiprows=1)
 df.columns = ['qseqid','sseqid','pident','length','mismatch','gapopen','qstart','qend','sstart','send','evalue','bitscore']
 
 #add some dummy columns
