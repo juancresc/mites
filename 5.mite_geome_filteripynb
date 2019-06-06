@@ -1,0 +1,673 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "path_blast = 'data/rice/2892.genome.csv'\n",
+    "path_blast_filtered = 'data/rice/2892.genome.filtered.csv'\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#TEs\n",
+    "params = {'min_len':50,'max_len':False,'min_distance':5,'max_q':1.3,'min_q':0.7,'min_pident':97,'min_qcov':97}\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "initial: 1508\n"
+     ]
+    }
+   ],
+   "source": [
+    "#read blast output\n",
+    "df = pd.read_csv(path_blast, sep='\\t', header=None)\n",
+    "df.columns = ['qseqid','sseqid','qstart','qend','sstart','send','mismatch','gaps','pident','evalue','length','qlen','slen','qcovs']\n",
+    "print('initial:',len(df.index))\n",
+    "initial = len(df.index)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Min len: 1508\n"
+     ]
+    }
+   ],
+   "source": [
+    "#filter by length\n",
+    "if(params['min_len']):\n",
+    "    df = df[df.qlen > params['min_len']]\n",
+    "print('Min len: ' + str(len(df.index)))\n",
+    "min_length = str(len(df.index))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Max len: 1508\n"
+     ]
+    }
+   ],
+   "source": [
+    "if(params['max_len']):\n",
+    "    df = df[df.qlen < params['max_len']]\n",
+    "print('Max len: ' + str(len(df.index)))    \n",
+    "max_length = str(len(df.index))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "min treshold: 296\n"
+     ]
+    }
+   ],
+   "source": [
+    "#filter by query / subject length treshold\n",
+    "df = df[((df.length / df.qlen) >= params['min_q'])]\n",
+    "print('min treshold:',len(df.index))\n",
+    "min_treshold = str(len(df.index))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "max treshold: 296\n"
+     ]
+    }
+   ],
+   "source": [
+    "df = df[((df.length / df.qlen) <= params['max_q'])]\n",
+    "print('max treshold:',len(df.index))\n",
+    "max_treshold = str(len(df.index))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Min_pident: 65\n"
+     ]
+    }
+   ],
+   "source": [
+    "#filter by pident\n",
+    "df = df[(df.pident >= params['min_pident'])]\n",
+    "print('Min_pident: ' + str(len(df.index)))\n",
+    "min_pident = str(len(df.index))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Min qcov: 65\n"
+     ]
+    }
+   ],
+   "source": [
+    "#filter by qcov\n",
+    "df = df[(df.qcovs >= params['min_qcov'])]\n",
+    "print('Min qcov: ' + str(len(df.index)))\n",
+    "min_qcov = str(len(df.index))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#order sstart and send\n",
+    "df['new_sstart'] = df[['sstart','send']].min(axis=1)\n",
+    "df['new_ssend'] = df[['sstart','send']].max(axis=1)\n",
+    "df['sstart'] = df['new_sstart']\n",
+    "df['send'] = df['new_ssend']\n",
+    "df = df.drop('new_sstart',axis=1).drop('new_ssend',axis=1)\n",
+    "df = df.sort_values(by=['sseqid','sstart', 'send'])\n",
+    "df = df.reset_index(drop=True)\n",
+    "# sep by chr\n",
+    "dfs = {}\n",
+    "for seq in df.sseqid.unique():\n",
+    "    dfs[seq] = df[df.sseqid == seq]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>qseqid</th>\n",
+       "      <th>sseqid</th>\n",
+       "      <th>qstart</th>\n",
+       "      <th>qend</th>\n",
+       "      <th>sstart</th>\n",
+       "      <th>send</th>\n",
+       "      <th>mismatch</th>\n",
+       "      <th>gaps</th>\n",
+       "      <th>pident</th>\n",
+       "      <th>evalue</th>\n",
+       "      <th>length</th>\n",
+       "      <th>qlen</th>\n",
+       "      <th>slen</th>\n",
+       "      <th>qcovs</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>MITE_T_2892|chr03|12410305|12410615|TA|38|F242...</td>\n",
+       "      <td>chr01</td>\n",
+       "      <td>80</td>\n",
+       "      <td>278</td>\n",
+       "      <td>4845501</td>\n",
+       "      <td>4845699</td>\n",
+       "      <td>5</td>\n",
+       "      <td>0</td>\n",
+       "      <td>97.487</td>\n",
+       "      <td>4.050000e-91</td>\n",
+       "      <td>199</td>\n",
+       "      <td>278</td>\n",
+       "      <td>43270923</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>MITE_T_2892|chr03|12410305|12410615|TA|38|F242...</td>\n",
+       "      <td>chr01</td>\n",
+       "      <td>1</td>\n",
+       "      <td>278</td>\n",
+       "      <td>6554388</td>\n",
+       "      <td>6554665</td>\n",
+       "      <td>3</td>\n",
+       "      <td>0</td>\n",
+       "      <td>98.921</td>\n",
+       "      <td>1.020000e-136</td>\n",
+       "      <td>278</td>\n",
+       "      <td>278</td>\n",
+       "      <td>43270923</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>MITE_T_2892|chr03|12410305|12410615|TA|38|F242...</td>\n",
+       "      <td>chr01</td>\n",
+       "      <td>1</td>\n",
+       "      <td>278</td>\n",
+       "      <td>8009459</td>\n",
+       "      <td>8009736</td>\n",
+       "      <td>4</td>\n",
+       "      <td>0</td>\n",
+       "      <td>98.561</td>\n",
+       "      <td>1.240000e-135</td>\n",
+       "      <td>278</td>\n",
+       "      <td>278</td>\n",
+       "      <td>43270923</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>MITE_T_2892|chr03|12410305|12410615|TA|38|F242...</td>\n",
+       "      <td>chr01</td>\n",
+       "      <td>1</td>\n",
+       "      <td>278</td>\n",
+       "      <td>8780736</td>\n",
+       "      <td>8781013</td>\n",
+       "      <td>4</td>\n",
+       "      <td>0</td>\n",
+       "      <td>98.561</td>\n",
+       "      <td>1.240000e-135</td>\n",
+       "      <td>278</td>\n",
+       "      <td>278</td>\n",
+       "      <td>43270923</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>MITE_T_2892|chr03|12410305|12410615|TA|38|F242...</td>\n",
+       "      <td>chr01</td>\n",
+       "      <td>1</td>\n",
+       "      <td>275</td>\n",
+       "      <td>11569000</td>\n",
+       "      <td>11569274</td>\n",
+       "      <td>3</td>\n",
+       "      <td>0</td>\n",
+       "      <td>98.909</td>\n",
+       "      <td>4.320000e-135</td>\n",
+       "      <td>275</td>\n",
+       "      <td>278</td>\n",
+       "      <td>43270923</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>MITE_T_2892|chr03|12410305|12410615|TA|38|F242...</td>\n",
+       "      <td>chr01</td>\n",
+       "      <td>1</td>\n",
+       "      <td>278</td>\n",
+       "      <td>15197067</td>\n",
+       "      <td>15197344</td>\n",
+       "      <td>2</td>\n",
+       "      <td>0</td>\n",
+       "      <td>99.281</td>\n",
+       "      <td>2.390000e-138</td>\n",
+       "      <td>278</td>\n",
+       "      <td>278</td>\n",
+       "      <td>43270923</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>MITE_T_2892|chr03|12410305|12410615|TA|38|F242...</td>\n",
+       "      <td>chr01</td>\n",
+       "      <td>1</td>\n",
+       "      <td>278</td>\n",
+       "      <td>19494346</td>\n",
+       "      <td>19494623</td>\n",
+       "      <td>3</td>\n",
+       "      <td>0</td>\n",
+       "      <td>98.921</td>\n",
+       "      <td>1.020000e-136</td>\n",
+       "      <td>278</td>\n",
+       "      <td>278</td>\n",
+       "      <td>43270923</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>MITE_T_2892|chr03|12410305|12410615|TA|38|F242...</td>\n",
+       "      <td>chr01</td>\n",
+       "      <td>80</td>\n",
+       "      <td>278</td>\n",
+       "      <td>20565509</td>\n",
+       "      <td>20565707</td>\n",
+       "      <td>5</td>\n",
+       "      <td>0</td>\n",
+       "      <td>97.487</td>\n",
+       "      <td>4.050000e-91</td>\n",
+       "      <td>199</td>\n",
+       "      <td>278</td>\n",
+       "      <td>43270923</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8</th>\n",
+       "      <td>MITE_T_2892|chr03|12410305|12410615|TA|38|F242...</td>\n",
+       "      <td>chr01</td>\n",
+       "      <td>1</td>\n",
+       "      <td>278</td>\n",
+       "      <td>31194947</td>\n",
+       "      <td>31195224</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>100.000</td>\n",
+       "      <td>4.610000e-141</td>\n",
+       "      <td>278</td>\n",
+       "      <td>278</td>\n",
+       "      <td>43270923</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9</th>\n",
+       "      <td>MITE_T_2892|chr03|12410305|12410615|TA|38|F242...</td>\n",
+       "      <td>chr01</td>\n",
+       "      <td>1</td>\n",
+       "      <td>278</td>\n",
+       "      <td>33042295</td>\n",
+       "      <td>33042572</td>\n",
+       "      <td>2</td>\n",
+       "      <td>0</td>\n",
+       "      <td>99.281</td>\n",
+       "      <td>2.390000e-138</td>\n",
+       "      <td>278</td>\n",
+       "      <td>278</td>\n",
+       "      <td>43270923</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                              qseqid sseqid  qstart  qend  \\\n",
+       "0  MITE_T_2892|chr03|12410305|12410615|TA|38|F242...  chr01      80   278   \n",
+       "1  MITE_T_2892|chr03|12410305|12410615|TA|38|F242...  chr01       1   278   \n",
+       "2  MITE_T_2892|chr03|12410305|12410615|TA|38|F242...  chr01       1   278   \n",
+       "3  MITE_T_2892|chr03|12410305|12410615|TA|38|F242...  chr01       1   278   \n",
+       "4  MITE_T_2892|chr03|12410305|12410615|TA|38|F242...  chr01       1   275   \n",
+       "5  MITE_T_2892|chr03|12410305|12410615|TA|38|F242...  chr01       1   278   \n",
+       "6  MITE_T_2892|chr03|12410305|12410615|TA|38|F242...  chr01       1   278   \n",
+       "7  MITE_T_2892|chr03|12410305|12410615|TA|38|F242...  chr01      80   278   \n",
+       "8  MITE_T_2892|chr03|12410305|12410615|TA|38|F242...  chr01       1   278   \n",
+       "9  MITE_T_2892|chr03|12410305|12410615|TA|38|F242...  chr01       1   278   \n",
+       "\n",
+       "     sstart      send  mismatch  gaps   pident         evalue  length  qlen  \\\n",
+       "0   4845501   4845699         5     0   97.487   4.050000e-91     199   278   \n",
+       "1   6554388   6554665         3     0   98.921  1.020000e-136     278   278   \n",
+       "2   8009459   8009736         4     0   98.561  1.240000e-135     278   278   \n",
+       "3   8780736   8781013         4     0   98.561  1.240000e-135     278   278   \n",
+       "4  11569000  11569274         3     0   98.909  4.320000e-135     275   278   \n",
+       "5  15197067  15197344         2     0   99.281  2.390000e-138     278   278   \n",
+       "6  19494346  19494623         3     0   98.921  1.020000e-136     278   278   \n",
+       "7  20565509  20565707         5     0   97.487   4.050000e-91     199   278   \n",
+       "8  31194947  31195224         0     0  100.000  4.610000e-141     278   278   \n",
+       "9  33042295  33042572         2     0   99.281  2.390000e-138     278   278   \n",
+       "\n",
+       "       slen  qcovs  \n",
+       "0  43270923    100  \n",
+       "1  43270923    100  \n",
+       "2  43270923    100  \n",
+       "3  43270923    100  \n",
+       "4  43270923    100  \n",
+       "5  43270923    100  \n",
+       "6  43270923    100  \n",
+       "7  43270923    100  \n",
+       "8  43270923    100  \n",
+       "9  43270923    100  "
+      ]
+     },
+     "execution_count": 27,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.head(10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "1\n",
+      "3\n",
+      "4\n",
+      "6\n",
+      "7\n",
+      "9\n",
+      "10\n",
+      "12\n",
+      "13\n",
+      "15\n",
+      "16\n",
+      "18\n",
+      "20\n",
+      "21\n",
+      "23\n",
+      "24\n",
+      "26\n",
+      "27\n",
+      "29\n",
+      "30\n",
+      "32\n",
+      "33\n",
+      "35\n",
+      "36\n",
+      "38\n",
+      "40\n",
+      "41\n",
+      "43\n",
+      "44\n",
+      "46\n",
+      "47\n",
+      "49\n",
+      "50\n",
+      "52\n",
+      "53\n",
+      "55\n",
+      "56\n",
+      "58\n",
+      "60\n",
+      "61\n",
+      "63\n",
+      "64\n",
+      "66\n",
+      "67\n",
+      "69\n",
+      "70\n",
+      "72\n",
+      "73\n",
+      "75\n",
+      "76\n",
+      "78\n",
+      "80\n",
+      "81\n",
+      "83\n",
+      "84\n",
+      "86\n",
+      "87\n",
+      "89\n",
+      "90\n",
+      "92\n",
+      "93\n",
+      "95\n",
+      "96\n",
+      "98\n",
+      "100\n"
+     ]
+    }
+   ],
+   "source": [
+    "# filter overlapped \n",
+    "rows = []\n",
+    "discard = []\n",
+    "total = len(df.index)\n",
+    "count = 0\n",
+    "curr = 0\n",
+    "for index, row in df.iterrows():\n",
+    "    count += 1\n",
+    "    curr_new = int(count * 100 * 1.0 / (total * 1.0))\n",
+    "    if curr_new != curr:\n",
+    "        curr = curr_new\n",
+    "        if curr_new % 1 == 0:\n",
+    "            print(curr_new)\n",
+    "    if index in discard:\n",
+    "        continue\n",
+    "    for k2, v2 in df.loc[index:,].iterrows():\n",
+    "        if abs(v2.sstart - row.sstart) > params['min_distance']:\n",
+    "            break\n",
+    "        if abs(v2.sstart - row.sstart) <= params['min_distance'] and abs(v2.send - row.send) <= params['min_distance']:\n",
+    "            discard.append(k2)\n",
+    "    rows.append(row)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Non overlapped: 65\n"
+     ]
+    }
+   ],
+   "source": [
+    "df = pd.DataFrame(rows)\n",
+    "print('Non overlapped: ' + str(len(df.index)))\n",
+    "non_overlapped = str(len(df.index))\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'data/rice/2892.genome.filtered.csv'"
+      ]
+     },
+     "execution_count": 30,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.to_csv(path_blast_filtered, index=None, sep='\\t')\n",
+    "path_blast_filtered"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Initial: 1508\n",
+      "Min len: 1508\n",
+      "Max len: 1508\n",
+      "Min treshold: 296\n",
+      "Max treshold: 296\n",
+      "Min pident: 65\n",
+      "Min qcov: 65\n",
+      "Non overlapped: 65\n",
+      "Saved: data/rice/2892.genome.filtered.csv\n"
+     ]
+    }
+   ],
+   "source": [
+    "print('Initial: ' + str(initial))\n",
+    "print('Min len: ' + str(min_length))\n",
+    "print('Max len: ' + str(max_length))\n",
+    "print('Min treshold: ' + str(min_treshold))\n",
+    "print('Max treshold: ' + str(max_treshold))\n",
+    "print('Min pident: ' + str(min_pident))\n",
+    "print('Min qcov: ' + str(min_qcov))\n",
+    "print('Non overlapped: ' + str(non_overlapped))\n",
+    "print('Saved: ' + path_blast_filtered)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
