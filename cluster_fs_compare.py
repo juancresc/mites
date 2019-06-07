@@ -24,15 +24,12 @@ df.columns = ['MITE','clusters','counts']
 
 buffer_mites = []
 for k,v in df.iterrows():
-    print(v)
     mite = v.MITE
-    c_dir = args.fsclusters + str(k)
-    print(c_dir)
-    if os.path.exists(c_dir):
-        continue
+    c_dir = args.fsclusters + mite
     if os.path.isdir(c_dir):
         shutil.rmtree(c_dir)
     pathlib.Path(c_dir).mkdir(parents=True, exist_ok=True)
+    print(args.families + mite + ".onlyflanking.fasta")
     cmd_list = [
     './bin/vsearch-2.11.1/bin/vsearch',
     '--cluster_fast', args.families + mite + ".onlyflanking.fasta",

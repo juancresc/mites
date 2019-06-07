@@ -24,11 +24,13 @@ parser.add_argument("-m", "--min", help="Min elements in clusters", default=30)
 parser.add_argument("-w", "--workers", help="Min elements in clusters", default=1)
 args = parser.parse_args()
 
+
 files = [f for f in os.listdir(args.families) if os.path.isfile(os.path.join(args.families, f))]
 count = 0
 total = len(files)
 for file in files:
     file_path = args.families + file
+    
     count += 1
     print("%i / %i" % (count,total))
     c_dir = args.clusters + file + "/"
@@ -39,7 +41,7 @@ for file in files:
     pathlib.Path(c_dir).mkdir(parents=True, exist_ok=True)
     cmd_list = [
     './bin/vsearch-2.11.1/bin/vsearch',
-    '--cluster_fast', args.output + k + ".flanking.fasta",
+    '--cluster_fast', file_path,
     '--threads',str(args.workers),
     '--strand','both',
     '--clusters', c_dir + "c_",
@@ -47,8 +49,6 @@ for file in files:
     '--id', str(args.pid)]
     p = Popen(cmd_list, stdout=PIPE, stderr=PIPE)
     out,err = p.communicate()
-
-
 
 
 files = [f for f in os.listdir(args.families) if os.path.isfile(os.path.join(args.families, f))]
@@ -70,10 +70,11 @@ for file in files:
         seqs.append(count_seqs)
         if count_seqs > args.min:
             valid_clusters[c_dir + cluster] = count_seqs
-    if max(seqs) > args.min:
-        res[file] = (len(clusters), max(seqs))
-    count += 1
-    print("%i / %i" % (count,total))
+    if len(seqs) > 0:
+        if max(seqs) > args.min:
+            res[file] = (len(clusters), max(seqs))
+        count += 1
+        print("%i / %i" % (count,total))
 
 res_s = sorted(res.items(), key=lambda x:x[1][1])
 
