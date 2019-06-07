@@ -24,6 +24,7 @@ df.columns = ['MITE','clusters','counts']
 
 buffer_mites = []
 for k,v in df.iterrows():
+    print(v)
     mite = v.MITE
     c_dir = args.fsclusters + str(k)
     print(c_dir)
