@@ -7,6 +7,8 @@ from Bio.Seq import Seq
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input", help="GFF file", required=True)
 parser.add_argument("-g", "--genome", help="", required=True)
+parser.add_argument("-f", "--flankings", help="", required=True)
+parser.add_argument("--onlyflankings", help="", required=True)
 parser.add_argument("-o", "--output", help="Dir", required=True)
 parser.add_argument("--flank_len", help="Flanking sequence length", default=50)
 args = parser.parse_args()
@@ -18,7 +20,7 @@ fasta_seq = SeqIO.parse(args.genome, 'fasta')
 buffer_mites = {}
 buffer_mites_fs = {}
 buffer_mites_ofs = {}
-
+print("extracting sequences...")
 for record in fasta_seq:
     dff_extract = df[df.seqname == record.id]
     count = 0
@@ -54,7 +56,7 @@ for record in fasta_seq:
         end_o_f_1 = start
         new_seq = clean_seq[start_o_f_1:end_o_f_1]
         att = v.attribute
-        id = att + "_" + record.id + "_" + str(start) + '_' + str(end)
+        id = att + "_fs1_" + record.id + "_" + str(start) + '_' + str(end)
         seq = SeqRecord(Seq(new_seq), id=id, description="_")
         if not att in buffer_mites_ofs:
             buffer_mites_ofs[att] = []
@@ -65,7 +67,7 @@ for record in fasta_seq:
         end_o_f_2 = end+args.flank_len
         new_seq = clean_seq[start_o_f_2:end_o_f_2]
         att = v.attribute
-        id = att + "_" + record.id + "_" + str(start) + '_' + str(end)
+        id = att + "_fs2_" + record.id + "_" + str(start) + '_' + str(end)
         seq = SeqRecord(Seq(new_seq), id=id, description="_")
         buffer_mites_ofs[att].append(seq)
         
@@ -73,14 +75,8 @@ for record in fasta_seq:
         curr_new = int(count * 100 * 1.0 / (total * 1.0))
         if curr_new != curr:
             curr = curr_new
-            if curr_new % 5 == 0:
+            if curr_new % 10 == 0:
                 print(curr_new)
 
 for k,v in buffer_mites.items():
     SeqIO.write(v, args.output + k + ".fasta", "fasta")
-
-for k,v in buffer_mites_fs.items():
-    SeqIO.write(v, args.output + k + ".flanking.fasta", "fasta")
-
-for k,v in buffer_mites_ofs.items():
-    SeqIO.write(v, args.output + k + ".onlyflanking.fasta", "fasta")

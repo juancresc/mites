@@ -14,17 +14,17 @@ from Bio.Seq import Seq
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--families", help="Families dir", required=True)
-parser.add_argument("-c", "--clusters", help="Clusters dir", required=True)
+parser.add_argument("--clusters", help="Clusters dir", required=True)
 parser.add_argument("--csv", help="CSV clusters file", required=True)
 parser.add_argument("--fasta", help="Fasta clusters file", required=True)
 parser.add_argument("--data", help="data dir", required=True)
 parser.add_argument("-g", "--genome", help="", required=True)
-parser.add_argument("-i", "--pid", help="", default=0.97)
+parser.add_argument("-i", "--pid", help="", default=0.96)
 parser.add_argument("-m", "--min", help="Min elements in clusters", default=30)
 parser.add_argument("-w", "--workers", help="Min elements in clusters", default=1)
 args = parser.parse_args()
 
-
+#list families and cluster them
 files = [f for f in os.listdir(args.families) if os.path.isfile(os.path.join(args.families, f))]
 count = 0
 total = len(files)
@@ -34,13 +34,11 @@ for file in files:
     count += 1
     print("%i / %i" % (count,total))
     c_dir = args.clusters + file + "/"
-    if os.path.exists(c_dir):
-        continue
     if os.path.isdir(c_dir):
         shutil.rmtree(c_dir)
     pathlib.Path(c_dir).mkdir(parents=True, exist_ok=True)
     cmd_list = [
-    './bin/vsearch-2.11.1/bin/vsearch',
+    './bin/vsearch-2.13.4/bin/vsearch',
     '--cluster_fast', file_path,
     '--threads',str(args.workers),
     '--strand','both',
@@ -50,12 +48,13 @@ for file in files:
     p = Popen(cmd_list, stdout=PIPE, stderr=PIPE)
     out,err = p.communicate()
 
-
+#list cluster and filter by min number
 files = [f for f in os.listdir(args.families) if os.path.isfile(os.path.join(args.families, f))]
 count = 0
 total = len(files)
 res = {}
 valid_clusters = {}
+f = open(args.csv, 'w')
 for file in files:
     file_path = args.families + file
     c_dir = args.clusters + file + "/"
@@ -69,16 +68,18 @@ for file in files:
                 count_seqs += 1
         seqs.append(count_seqs)
         if count_seqs > args.min:
-            valid_clusters[c_dir + cluster] = count_seqs
-    if len(seqs) > 0:
-        if max(seqs) > args.min:
-            res[file] = (len(clusters), max(seqs))
-        count += 1
-        print("%i / %i" % (count,total))
+            clus_file = c_dir + cluster
+            f.write("%s,%s,%s\n"%(file,clus_file,count_seqs))
+#            print(c_dir + cluster, count_seqs)
+#    if len(seqs) > 0:
+#        if max(seqs) > args.min:
+#            res[file] = (len(clusters), max(seqs))
+#        count += 1
+#        print("%i / %i" % (count,total))
 
-res_s = sorted(res.items(), key=lambda x:x[1][1])
+#res_s = sorted(res.items(), key=lambda x:x[1][1])
 
 
-with open(args.csv, 'w') as f:
-    for v in res_s:
-        f.write("%s,%s,%s\n"%(v[0],v[1][0],v[1][1]))
+#with open(args.csv, 'w') as f:
+#    for v in res_s:
+#        f.write("%s,%s,%s\n"%(v[0],v[1][0],v[1][1]))

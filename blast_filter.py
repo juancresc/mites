@@ -10,8 +10,8 @@ parser.add_argument("--max_len", help="",default=False)
 parser.add_argument("--min_distance", help="",default=5)
 parser.add_argument("--min_q", help="",default=0.85)
 parser.add_argument("--max_q", help="",default=1.25)
-parser.add_argument("--min_pident", help="",default=95)
-parser.add_argument("--min_qcov", help="",default=93)
+parser.add_argument("--min_pident", help="",default=94)
+parser.add_argument("--min_qcov", help="",default=92)
 args = parser.parse_args()
 
 df = pd.read_csv(args.input, sep='\t', header=None)
@@ -56,6 +56,7 @@ if args.min_qcov:
     min_qcov = str(len(df.index))
 
 if args.min_distance:
+    print('Filtering overlapped...')
     #order sstart and send
     df['new_sstart'] = df[['sstart','send']].min(axis=1)
     df['new_ssend'] = df[['sstart','send']].max(axis=1)
