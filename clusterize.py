@@ -17,7 +17,6 @@ parser.add_argument("-f", "--families", help="Families dir", required=True)
 parser.add_argument("--clusters", help="Clusters dir", required=True)
 parser.add_argument("--csv", help="CSV clusters file", required=True)
 parser.add_argument("--fasta", help="Fasta clusters file", required=True)
-parser.add_argument("--data", help="data dir", required=True)
 parser.add_argument("-g", "--genome", help="", required=True)
 parser.add_argument("-i", "--pid", help="", default=0.96)
 parser.add_argument("-m", "--min", help="Min elements in clusters", default=30)
@@ -70,16 +69,3 @@ for file in files:
         if count_seqs > args.min:
             clus_file = c_dir + cluster
             f.write("%s,%s,%s,%s\n"%(file,clus_file,cluster,count_seqs))
-#            print(c_dir + cluster, count_seqs)
-#    if len(seqs) > 0:
-#        if max(seqs) > args.min:
-#            res[file] = (len(clusters), max(seqs))
-#        count += 1
-#        print("%i / %i" % (count,total))
-
-#res_s = sorted(res.items(), key=lambda x:x[1][1])
-
-
-#with open(args.csv, 'w') as f:
-#    for v in res_s:
-#        f.write("%s,%s,%s\n"%(v[0],v[1][0],v[1][1]))

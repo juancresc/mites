@@ -13,25 +13,22 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--csv", help="CSV clusters file", required=True)
 parser.add_argument("--onlyflanking", help="", required=True)
 parser.add_argument("--flankingcluster", help="", required=True)
 parser.add_argument("-w", "--workers", help="Min elements in clusters", default=1)
 args = parser.parse_args()
 
-df = pd.read_csv(args.csv, sep=',', header=None)
-df.columns = ['cluster','file','counts']
+clusters = [f for f in os.listdir(args.onlyflanking) if os.path.isfile(os.path.join(args.onlyflanking, f))]
 
-buffer_mites = []
-for k,v in df.iterrows():
-    mite = v.cluster
-    c_dir = args.flankingcluster + mite + '/'
+
+for cluster in clusters:
+    c_dir = args.flankingcluster + cluster + '/'
     if os.path.isdir(c_dir):
         shutil.rmtree(c_dir)
     pathlib.Path(c_dir).mkdir(parents=True, exist_ok=True)
     cmd_list = [
     './bin/vsearch-2.13.4/bin/vsearch',
-    '--cluster_fast', args.onlyflanking + mite,
+    '--cluster_fast', args.onlyflanking + cluster,
     '--threads',str(args.workers),
     '--strand','both',
     '--clusters', c_dir + "c_",
@@ -39,7 +36,12 @@ for k,v in df.iterrows():
     '--id', '0.3']
     p = Popen(cmd_list, stdout=PIPE, stderr=PIPE)
     out,err = p.communicate()
-
+    file_c = open(args.onlyflanking + cluster, "r")
+    count_seqs = 0
+    for line in file_c:
+        if line[0:1] == ">":
+            count_seqs += 1
     files = [f for f in os.listdir(c_dir) if os.path.isfile(os.path.join(c_dir, f))]
-    value = len(files) * 100 / (v.counts * 2)
-    print(mite, v.counts,len(files), value)
+    value = len(files) * 100 / (count_seqs)
+    if value > 90:
+        print(cluster, count_seqs,len(files), value)
