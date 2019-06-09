@@ -7,10 +7,7 @@ from Bio.Seq import Seq
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input", help="GFF file", required=True)
 parser.add_argument("-g", "--genome", help="", required=True)
-parser.add_argument("-f", "--flankings", help="", required=True)
-parser.add_argument("--onlyflankings", help="", required=True)
 parser.add_argument("-o", "--output", help="Dir", required=True)
-parser.add_argument("--flank_len", help="Flanking sequence length", default=50)
 args = parser.parse_args()
 
 df = pd.read_csv(args.input, sep='\t', header=None)
@@ -39,7 +36,7 @@ for record in fasta_seq:
         if not att in buffer_mites:
             buffer_mites[att] = []
         buffer_mites[att].append(seq)
-
+        continue
         #add flanking
         start_f = max(start - args.flank_len,0)
         end_f = end + args.flank_len
