@@ -19,7 +19,7 @@ parser.add_argument("--csv", help="CSV clusters file", required=True)
 parser.add_argument("--fasta", help="Fasta clusters file", required=True)
 parser.add_argument("-g", "--genome", help="", required=True)
 parser.add_argument("-i", "--pid", help="", default=0.96)
-parser.add_argument("-m", "--min", help="Min elements in clusters", default=30)
+parser.add_argument("-m", "--min", help="Min elements in clusters", default=45, type=int)
 parser.add_argument("-w", "--workers", help="Min elements in clusters", default=1)
 args = parser.parse_args()
 

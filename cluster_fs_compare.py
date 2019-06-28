@@ -44,4 +44,4 @@ for cluster in clusters:
     files = [f for f in os.listdir(c_dir) if os.path.isfile(os.path.join(c_dir, f))]
     value = len(files) * 100 / (count_seqs)
     if value > 90:
-        print(cluster, count_seqs,len(files), value)
+        print("%s,%s,%s,%s" % (cluster, count_seqs,len(files), value))

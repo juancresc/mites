@@ -21,8 +21,6 @@ parser.add_argument("--with_fs", help="With fs", required=True)
 parser.add_argument("--csv", help="CSV clusters file", required=True)
 parser.add_argument("--fasta", help="Fasta clusters file", required=True)
 parser.add_argument("-g", "--genome", help="", required=True)
-parser.add_argument("-i", "--pid", help="", default=0.96)
-parser.add_argument("-m", "--min", help="Min elements in clusters", default=30)
 parser.add_argument("-w", "--workers", help="Min elements in clusters", default=1)
 args = parser.parse_args()
 
@@ -37,15 +35,18 @@ pathlib.Path(args.with_fs).mkdir(parents=True, exist_ok=True)
 
 df = pd.read_csv(args.csv, sep=',', header=None)
 df.columns = ['family','file','cluster','counts']
-
 fasta_seq = SeqIO.parse(args.genome, 'fasta')
 buffer_with_fs = {}
 buffer_fs = {}
-print("extracting sequences...")
+total = len(df.index)
+print("extracting sequences...", total)
+count = 0
 for record in fasta_seq:
+    clean_seq = ''.join(str(record.seq).splitlines())
+    print(record.id)
     for k,v in df.iterrows():
-        fasta_seq = SeqIO.parse(v.file, 'fasta')
-        for record_ in fasta_seq:
+        fasta_seq_2 = SeqIO.parse(v.file, 'fasta')
+        for record_ in fasta_seq_2:
             file_ = v.family + '_' + v.cluster
             seqname_data = record_.id.split('_')
             chromosome = seqname_data[-3]
@@ -53,8 +54,7 @@ for record in fasta_seq:
             end = int(seqname_data[-1])
             if chromosome != record.id:
                 continue
-            clean_seq = ''.join(str(record.seq).splitlines())
-
+        
             #add flanking
             start_f = max(start - args.fslen,0)
             end_f = end + args.fslen

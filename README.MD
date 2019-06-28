@@ -26,3 +26,12 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5659041/
 
 Mobilization of Stowaway-like MITEs in newly formed allohexaploid wheat species
 https://link.springer.com/article/10.1007/s11103-012-9957-3
+
+
+./bin/vsearch-2.13.4/bin/vsearch \
+--cluster_fast data/wheat/allmites.fasta \
+--threads 1 \
+--strand both \
+--clusters data/wheat/mites/ \
+--iddef 1 \
+--id 0.85
